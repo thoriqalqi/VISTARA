@@ -1,78 +1,84 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vistara Core - Intelligent Business Chat</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              serif: ['Playfair Display', 'serif'],
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vistara Core - Intelligent Business Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+          },
+          colors: {
+            nexus: {
+              base: '#f8fafc',
+              surface: '#ffffff',
+              accent: '#b48a39',  // Darker, richer gold
+              accentLight: '#f3e6c2', // Pale gold for backgrounds
+              onyx: '#1a1c23',    // Deep luxury black/slate
+              text: '#1e293b',
+              muted: '#64748b',
+              border: '#e2e8f0',
+            }
+          },
+          backgroundImage: {
+            'gradient-gold': 'linear-gradient(135deg, #b48a39 0%, #8a6822 100%)',
+            'gradient-onyx': 'linear-gradient(135deg, #1a1c23 0%, #0f172a 100%)',
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
             },
-            colors: {
-              nexus: {
-                base: '#f8fafc',    
-                surface: '#ffffff', 
-                accent: '#b48a39',  // Darker, richer gold
-                accentLight: '#f3e6c2', // Pale gold for backgrounds
-                onyx: '#1a1c23',    // Deep luxury black/slate
-                text: '#1e293b',    
-                muted: '#64748b',   
-                border: '#e2e8f0',
-              }
-            },
-            backgroundImage: {
-              'gradient-gold': 'linear-gradient(135deg, #b48a39 0%, #8a6822 100%)',
-              'gradient-onyx': 'linear-gradient(135deg, #1a1c23 0%, #0f172a 100%)',
-            },
-            animation: {
-              'fade-in': 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0', transform: 'translateY(10px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              },
-              slideUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              }
+            slideUp: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
             }
           }
         }
       }
-    </script>
-    <style>
-      body {
-        background-color: #f8fafc;
-        /* Technical Dot Pattern for Business Feel */
-        background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-        background-size: 24px 24px;
-        color: #1e293b;
-        font-family: 'Inter', sans-serif;
-      }
-      
-      /* Hide Scrollbar but keep functionality */
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #e2e8f0; 
-        border-radius: 10px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #cbd5e1; 
-      }
-    </style>
+    }
+  </script>
+  <style>
+    body {
+      background-color: #f8fafc;
+      /* Technical Dot Pattern for Business Feel */
+      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: #1e293b;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Hide Scrollbar but keep functionality */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #cbd5e1;
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -88,7 +94,10 @@
 }
 </script>
 </head>
-  <body>
-    <div id="root"></div>
-  </body>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>

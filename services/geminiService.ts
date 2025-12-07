@@ -2,7 +2,11 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { AgentType, AgentAction, SentimentData, LocationAnalysis, SimResult } from "../types";
 
 const getAI = () => {
-    return new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+        throw new Error("API Key tidak ditemukan. Pastikan VITE_GEMINI_API_KEY ada di file .env");
+    }
+    return new GoogleGenAI({ apiKey });
 };
 
 // Helper function to robustly parse JSON from AI response
@@ -18,7 +22,7 @@ const parseJSON = (text: string) => {
         return JSON.parse(text);
     } catch (e) {
         console.error("JSON Parse Error:", text.substring(0, 100));
-        return {}; 
+        return {};
     }
 };
 
@@ -57,9 +61,9 @@ FORMAT OUTPUT (JSON ONLY):
 
 export const sendMessageToOrchestrator = async (history: AgentAction[], newMessage: string) => {
     const ai = getAI();
-    
+
     // Construct Context String from History
-    const contextStr = history.slice(-6).map(h => 
+    const contextStr = history.slice(-6).map(h =>
         `[${h.agent === AgentType.USER ? 'KLIEN' : 'KONSULTAN ' + h.agent}]: ${h.content}`
     ).join('\n');
 
@@ -83,7 +87,7 @@ export const sendMessageToOrchestrator = async (history: AgentAction[], newMessa
                 systemInstruction: SYSTEM_INSTRUCTION,
                 responseMimeType: 'application/json',
                 maxOutputTokens: 3000,
-                temperature: 0.4, 
+                temperature: 0.4,
             }
         });
 
@@ -98,7 +102,7 @@ export const sendMessageToOrchestrator = async (history: AgentAction[], newMessa
         }));
 
         if (actions.length === 0) {
-             return [{
+            return [{
                 agent: AgentType.STRATEGIST,
                 content: "Maaf, saya sedang mengkalibrasi data. Bisa ulangi pertanyaan Anda dengan lebih spesifik?",
                 title: "Kalibrasi Sistem"
@@ -118,8 +122,8 @@ export const sendMessageToOrchestrator = async (history: AgentAction[], newMessa
 };
 
 export const generateCollaborationIdeas = async (business: string, goal: string) => {
-  const ai = getAI();
-  const prompt = `Act as a Strategic Partnership Manager.
+    const ai = getAI();
+    const prompt = `Act as a Strategic Partnership Manager.
   Business: ${business}. Goal: ${goal}.
   
   FRAMEWORK: "Leverage & Access".
@@ -127,19 +131,19 @@ export const generateCollaborationIdeas = async (business: string, goal: string)
   
   Berikan 3 Ide Kolaborasi Tak Terduga (Unconventional).
   Output JSON: [{partnerName, partnerType, mechanism (Taktik detail), benefit (Kalkulasi dampak)}]`;
-  
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: { responseMimeType: 'application/json' }
-  });
-  
-  return parseJSON(response.text || "[]");
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: { responseMimeType: 'application/json' }
+    });
+
+    return parseJSON(response.text || "[]");
 };
 
 export const analyzeSentiment = async (text: string): Promise<SentimentData> => {
-  const ai = getAI();
-  const prompt = `Act as a Consumer Psychologist. Analyze: "${text}".
+    const ai = getAI();
+    const prompt = `Act as a Consumer Psychologist. Analyze: "${text}".
   
   FRAMEWORK: "Iceberg Model".
   Apa yang dikatakan (permukaan) vs Apa yang sebenarnya dirasakan (bawah sadar).
@@ -147,21 +151,21 @@ export const analyzeSentiment = async (text: string): Promise<SentimentData> => 
   
   Output JSON: {score (0-100), sentiment, summary, actionableInsight (Solusi operasional konkret), keywords}.`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: { responseMimeType: 'application/json' }
-  });
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: { responseMimeType: 'application/json' }
+    });
 
-  return parseJSON(response.text || "{}");
+    return parseJSON(response.text || "{}");
 };
 
-export const analyzeLocation = async (base64Image: string, desc: string, coords?: {lat: number, lng: number}): Promise<LocationAnalysis> => {
+export const analyzeLocation = async (base64Image: string, desc: string, coords?: { lat: number, lng: number }): Promise<LocationAnalysis> => {
     const ai = getAI();
     let promptText = `Act as a Property Investment Auditor.
     Subject: "${desc}". `;
     if (coords) promptText += ` GPS: ${coords.lat}, ${coords.lng}.`;
-    
+
     promptText += `
     FRAMEWORK: "3L (Location, Logistics, Labor)".
     1. Location: Visibility & Accessibility.
@@ -172,7 +176,7 @@ export const analyzeLocation = async (base64Image: string, desc: string, coords?
     Jadilah PESIMIS. Lindungi uang klien.
     
     Output JSON: {suitabilityScore, economicGrade, demographicFit, competitorAnalysis, strengths, weaknesses, recommendation}.`;
-    
+
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: {
@@ -196,7 +200,7 @@ export const generateBrandAssets = async (name: string, vibe: string) => {
     Jangan buat tagline pasaran. Harus punya "Attitude".
     
     Output JSON: { taglines (3 opsi berani), description (Storytelling dengan emosi) }.`;
-    
+
     const textResponsePromise = ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: textPrompt,
@@ -211,7 +215,7 @@ export const generateBrandAssets = async (name: string, vibe: string) => {
 
     const [textResp, imageResp] = await Promise.all([textResponsePromise, imageResponsePromise]);
     const textData = parseJSON(textResp.text || "{}");
-    
+
     let logoUrl = "";
     if (imageResp.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
         logoUrl = `data:image/png;base64,${imageResp.candidates[0].content.parts[0].inlineData.data}`;

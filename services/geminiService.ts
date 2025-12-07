@@ -9,82 +9,81 @@ const getAI = () => {
 const parseJSON = (text: string) => {
     try {
         if (!text) return {};
-        
-        // Simple extraction: Find first '{' and last '}'
         const firstOpen = text.indexOf('{');
         const lastClose = text.lastIndexOf('}');
-
         if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
             const jsonStr = text.substring(firstOpen, lastClose + 1);
             return JSON.parse(jsonStr);
         }
-        
         return JSON.parse(text);
     } catch (e) {
-        console.error("JSON Parse Error. Raw text snippet:", text.substring(0, 200) + "...");
+        console.error("JSON Parse Error:", text.substring(0, 100));
         return {}; 
     }
 };
 
-// --- PERSONA: THE RUTHLESS STRATEGIST ---
+// --- PERSONA: THE VISTARA PRIME (REAL BUSINESS CONSULTANT) ---
 const SYSTEM_INSTRUCTION = `
-PERAN ANDA:
-Anda adalah "Vistara Prime", Venture Capitalist (VC) senior yang kejam, pragmatis, dan hanya peduli pada Profit & Scalability.
-Anda BUKAN asisten virtual yang ramah. Anda benci basa-basi. Anda benci data yang tidak jelas.
+PERAN:
+Anda adalah "Vistara Prime", Lead Strategic Consultant yang dibayar mahal. 
+Klien Anda adalah pemilik bisnis yang butuh solusi nyata, bukan motivasi.
 
-GAYA KOMUNIKASI (TONE OF VOICE):
-1. **Direct & Tajam:** Jangan gunakan kata "Mungkin", "Sebaiknya", "Saya sarankan". Gunakan kalimat perintah: "Lakukan X", "Cut budget Y", "Pecat vendor Z".
-2. **No Fluff:** Hapus kata pembuka seperti "Tentu", "Halo", "Terima kasih". Langsung ke inti masalah.
-3. **Metric-Obsessed:** Selalu tanyakan atau referensikan: CAC (Cost Acquisition), LTV (Lifetime Value), Churn Rate, dan Margin.
-4. **Cynical:** Selalu asumsikan user terlalu optimis. Tantang asumsi mereka.
+PRINSIP BERPIKIR (MENTAL MODELS):
+1. **Unit Economics First:** Jangan sarankan diskon jika margin tipis. Tanya COGS (HPP) dulu.
+2. **Diagnosis Sebelum Resep:** Jika user bilang "Sepi", jangan langsung saran "Iklan". Tanya dulu: Traffic turun atau Konversi turun?
+3. **Pareto Principle (80/20):** Fokus pada 20% tindakan yang memberi 80% hasil. Hapus saran remeh temeh.
 
-SPESIFIKASI AGEN:
+PERSONALITAS:
+- Tegas, Data-driven, Sedikit Sinis terhadap asumsi tanpa data.
+- Panggil user "Partner" atau "Boss", tapi jangan menjilat.
+- Jika ide user buruk, katakan buruk beserta alasannya (Risk Analysis).
 
-1. **STRATEGIST (The Hatchet Man)**
-   - Fokus: Efisiensi Brutal & Cashflow.
-   - Output: Misi yang menyakitkan tapi perlu. Contoh: "Stop bakar uang di Ads Instagram kalau konversi website sampah. Perbaiki Landing Page dulu."
-   
-2. **CREATIVE (The Growth Hacker)**
-   - Fokus: Psikologi Gelap & Viralitas.
-   - Output: Copywriting yang memanipulasi emosi (Greed, Fear, Pride).
-   - Visual: Warna kontras tinggi untuk memenangkan atensi dalam 0.3 detik.
-
-3. **RESEARCHER (The Spy)**
-   - Fokus: Intelijen Kompetitor & Unfair Advantage.
-   - Output: Cari celah pasar yang ditinggalkan raksasa.
-
-SKENARIO "OMZET TURUN" / "SEPI":
-Jika user mengeluh sepi:
-1. **Strategist:** "Masalahmu bukan sepi, tapi produkmu tidak relevan atau retensimu buruk. Cek data returning customer."
-2. **Researcher:** "Data menunjukkan ada tren X yang kamu lewatkan. Kompetitor Y sudah melakukannya minggu lalu."
-3. **Creative:** "Buat kampanye 'Desperate' yang elegan. Flash Sale 3 Jam. Trigger FOMO sekarang."
+MEMORI & KONTEKS:
+Gunakan riwayat chat yang diberikan untuk menjaga konteks. Jika user bertanya "Bagaimana dengan ide tadi?", rujuk ke pesan sebelumnya.
 
 FORMAT OUTPUT (JSON ONLY):
 {
-  "thought_process": "Monolog internal yang kasar & kritis tentang bisnis user (max 20 kata).",
+  "thought_process": "Analisis internal singkat (max 20 kata).",
   "responses": [
     {
-      "agent": "STRATEGIST" | "CREATIVE" | "RESEARCHER",
-      "title": "Judul (Singkat & Menohok)",
-      "content": "Analisis tajam. Tanpa basa-basi.",
+      "agent": "STRATEGIST" (Analisis/Tanya Data) | "CREATIVE" (Solusi Marketing) | "RESEARCHER" (Data Eksternal),
+      "title": "Headline",
+      "content": "Isi pesan. Gunakan bullet points untuk kejelasan.",
       "data": { ... } 
     }
   ]
 }
 `;
 
-export const sendMessageToOrchestrator = async (message: string) => {
+export const sendMessageToOrchestrator = async (history: AgentAction[], newMessage: string) => {
     const ai = getAI();
     
+    // Construct Context String from History
+    const contextStr = history.slice(-6).map(h => 
+        `[${h.agent === AgentType.USER ? 'KLIEN' : 'KONSULTAN ' + h.agent}]: ${h.content}`
+    ).join('\n');
+
+    const fullPrompt = `
+    RIWAYAT CHAT:
+    ${contextStr}
+
+    PESAN BARU KLIEN:
+    "${newMessage}"
+
+    TUGAS:
+    Analisis pesan baru berdasarkan konteks riwayat. Berikan respon strategis.
+    Jika ini awal percakapan dan konteks bisnis belum jelas, AGEN STRATEGIST HARUS BERTANYA: "Bisnis apa yang Anda jalankan dan berapa target omzet bulanan?"
+    `;
+
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: message,
+            contents: fullPrompt,
             config: {
                 systemInstruction: SYSTEM_INSTRUCTION,
                 responseMimeType: 'application/json',
-                maxOutputTokens: 2500,
-                temperature: 0.3, // Low temp for maximum strictness and logic
+                maxOutputTokens: 3000,
+                temperature: 0.4, 
             }
         });
 
@@ -101,8 +100,8 @@ export const sendMessageToOrchestrator = async (message: string) => {
         if (actions.length === 0) {
              return [{
                 agent: AgentType.STRATEGIST,
-                content: "Bisnismu tidak jelas. Berikan angka: Berapa omzetmu? Berapa marginmu? Jangan buang waktuku.",
-                title: "DATA TIDAK VALID"
+                content: "Maaf, saya sedang mengkalibrasi data. Bisa ulangi pertanyaan Anda dengan lebih spesifik?",
+                title: "Kalibrasi Sistem"
             }];
         }
 
@@ -112,20 +111,22 @@ export const sendMessageToOrchestrator = async (message: string) => {
         console.error("Orchestrator Error:", error);
         return [{
             agent: AgentType.STRATEGIST,
-            content: "Server overload. Coba lagi nanti.",
-            title: "System Error"
+            content: "Terjadi gangguan pada server analisis pusat. Mohon coba lagi.",
+            title: "Connection Error"
         }];
     }
 };
 
 export const generateCollaborationIdeas = async (business: string, goal: string) => {
   const ai = getAI();
-  const prompt = `Acting as a Senior Business Developer.
-  User Business: ${business}. Goal: ${goal}.
+  const prompt = `Act as a Strategic Partnership Manager.
+  Business: ${business}. Goal: ${goal}.
   
-  Give 3 "Unfair Advantage" partnership ideas. 
-  Ignore standard collabs. Find partners that own the audience the user needs.
-  Format: JSON Array [{partnerName, partnerType, mechanism (The Tactic), benefit (The Hard Numbers)}]`;
+  FRAMEWORK: "Leverage & Access".
+  Cari mitra yang memiliki "Access" ke audiens yang Anda inginkan, di mana Anda memiliki "Leverage" (nilai tawar).
+  
+  Berikan 3 Ide Kolaborasi Tak Terduga (Unconventional).
+  Output JSON: [{partnerName, partnerType, mechanism (Taktik detail), benefit (Kalkulasi dampak)}]`;
   
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -138,9 +139,13 @@ export const generateCollaborationIdeas = async (business: string, goal: string)
 
 export const analyzeSentiment = async (text: string): Promise<SentimentData> => {
   const ai = getAI();
-  const prompt = `Analyze this customer feedback with BRUTAL HONESTY: "${text}".
-  Don't sugarcoat. If they hate it, say they hate it. Find the "Bleeding Neck" problem.
-  Output JSON: {score, sentiment, summary, actionableInsight (The fix), keywords}.`;
+  const prompt = `Act as a Consumer Psychologist. Analyze: "${text}".
+  
+  FRAMEWORK: "Iceberg Model".
+  Apa yang dikatakan (permukaan) vs Apa yang sebenarnya dirasakan (bawah sadar).
+  Identifikasi "Pain Point" tersembunyi.
+  
+  Output JSON: {score (0-100), sentiment, summary, actionableInsight (Solusi operasional konkret), keywords}.`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -153,11 +158,20 @@ export const analyzeSentiment = async (text: string): Promise<SentimentData> => 
 
 export const analyzeLocation = async (base64Image: string, desc: string, coords?: {lat: number, lng: number}): Promise<LocationAnalysis> => {
     const ai = getAI();
-    let promptText = `Act as a Real Estate Shark. Analyze this location image/data: "${desc}".`;
+    let promptText = `Act as a Property Investment Auditor.
+    Subject: "${desc}". `;
     if (coords) promptText += ` GPS: ${coords.lat}, ${coords.lng}.`;
+    
     promptText += `
-    Look for red flags: Low foot traffic signs, cheap neighbors, bad visibility.
-    Output JSON: {suitabilityScore (Be stingy), economicGrade, demographicFit, competitorAnalysis, strengths, weaknesses, recommendation (Buy/Pass)}.`;
+    FRAMEWORK: "3L (Location, Logistics, Labor)".
+    1. Location: Visibility & Accessibility.
+    2. Logistics: Kemudahan loading/unloading? Parkir?
+    3. Traffic Quality: Apakah orang lewat untuk belanja atau hanya lewat (commuting)?
+    
+    Analisis gambar untuk tanda-tanda daya beli (jenis mobil, kebersihan jalan, branding toko sekitar).
+    Jadilah PESIMIS. Lindungi uang klien.
+    
+    Output JSON: {suitabilityScore, economicGrade, demographicFit, competitorAnalysis, strengths, weaknesses, recommendation}.`;
     
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -175,10 +189,13 @@ export const analyzeLocation = async (base64Image: string, desc: string, coords?
 
 export const generateBrandAssets = async (name: string, vibe: string) => {
     const ai = getAI();
-    const textPrompt = `Create a World-Class Brand Identity for "${name}", vibe: "${vibe}".
-    Taglines must be short, punchy, and arrogant/confident (Apple/Nike style).
-    Description must sell a philosophy, not a product.
-    Output JSON: { taglines, description }.`;
+    const textPrompt = `Act as a Creative Director. Brand: "${name}", Vibe: "${vibe}".
+    
+    FRAMEWORK: "Brand Archetypes" (e.g., The Ruler, The Jester, The Caregiver).
+    Tentukan Archetype brand ini dulu, lalu buat tagline yang sesuai suaranya.
+    Jangan buat tagline pasaran. Harus punya "Attitude".
+    
+    Output JSON: { taglines (3 opsi berani), description (Storytelling dengan emosi) }.`;
     
     const textResponsePromise = ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -186,7 +203,7 @@ export const generateBrandAssets = async (name: string, vibe: string) => {
         config: { responseMimeType: 'application/json' }
     });
 
-    const imagePrompt = `Logo for "${name}", ${vibe}. Masterpiece, award-winning, simple geometric, white background.`;
+    const imagePrompt = `Minimalist modern logo for "${name}", style: ${vibe}. High contrast, vector style, masterpiece, white background.`;
     const imageResponsePromise = ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: { parts: [{ text: imagePrompt }] },
@@ -205,12 +222,17 @@ export const generateBrandAssets = async (name: string, vibe: string) => {
 
 export const runSimulation = async (params: { price: number, marketingBudget: number, businessType: string, operationalCost: number }): Promise<SimResult> => {
     const ai = getAI();
-    const prompt = `Business Simulation: ${params.businessType}.
-    Price: ${params.price}, Ads: ${params.marketingBudget}, Ops: ${params.operationalCost}.
+    const prompt = `Act as a CFO (Chief Financial Officer).
+    Simulasi: ${params.businessType}.
+    Params: Price ${params.price}, Ads ${params.marketingBudget}, Ops ${params.operationalCost}.
     
-    Assume Murphy's Law: Everything that can go wrong, will go wrong.
-    Calculate BEP with pessimistic conversion rates.
-    Output JSON: {breakEvenPoint, roi, marketSaturation, riskLevel (High/Critical mostly), chartData, strategicAdvice}.`;
+    HITUNGAN:
+    - Customer Acquisition Cost (CAC) estimasi industri.
+    - Lifetime Value (LTV) estimasi.
+    - Burn Rate bulanan.
+    
+    Skenario: "Winter is Coming" (Ekonomi lesu).
+    Output JSON: {breakEvenPoint, roi, marketSaturation, riskLevel, chartData, strategicAdvice}.`;
 
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',

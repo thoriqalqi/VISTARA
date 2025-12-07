@@ -27,8 +27,8 @@ const App: React.FC = () => {
   const [messages, setMessages] = useState<AgentAction[]>([
       {
           agent: AgentType.STRATEGIST,
-          content: "Vistara Prime online. Saya tidak di sini untuk memanjakan ego Anda. Tunjukkan angkanya, atau ceritakan masalah terbesarnya. Waktu adalah uang.",
-          title: "EXECUTIVE SYSTEM"
+          content: "Vistara Prime siap. Saya telah mempelajari data pasar terkini. Ceritakan bisnis Anda secara singkat (Produk, Target Pasar, Isu Utama) agar saya bisa memberikan diagnosis akurat.",
+          title: "CONSULTANT ONLINE"
       }
   ]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -43,18 +43,27 @@ const App: React.FC = () => {
     if (!input.trim()) return;
 
     const userMsg: AgentAction = { agent: AgentType.USER, content: input };
+    
+    // Optimistic Update
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
     try {
-        const agentActions = await sendMessageToOrchestrator(userMsg.content);
+        // Pass the CURRENT messages state (history) + the new user message to the service
+        // We use 'messages' from state, but we need to append the new userMsg effectively for the context
+        // However, React state update is async, so we manually combine them for the API call
+        const currentHistory = [...messages, userMsg];
+        
+        const agentActions = await sendMessageToOrchestrator(currentHistory, userMsg.content);
+        
         for (const action of agentActions) {
-            await new Promise(resolve => setTimeout(resolve, 600)); 
+            // Artificial delay for "Thinking" effect
+            await new Promise(resolve => setTimeout(resolve, 800)); 
             setMessages(prev => [...prev, action]);
         }
     } catch (e) {
-        setMessages(prev => [...prev, { agent: AgentType.STRATEGIST, content: "Koneksi terputus. Refresh sistem." }]);
+        setMessages(prev => [...prev, { agent: AgentType.STRATEGIST, content: "Koneksi ke server pusat terganggu. Silakan coba lagi." }]);
     } finally {
         setLoading(false);
     }
@@ -171,7 +180,7 @@ const App: React.FC = () => {
                                     <Sparkles size={16} className="text-gray-400" />
                                 </div>
                                 <div className="text-xs text-gray-400 font-medium pt-2">
-                                    Analyzing market data...
+                                    Analyzing market variables...
                                 </div>
                             </div>
                         )}
@@ -184,7 +193,7 @@ const App: React.FC = () => {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                placeholder="Jelaskan situasi bisnis Anda secara spesifik..." 
+                                placeholder="Ketik pesan Anda..." 
                                 className="border-none shadow-none focus:ring-0 bg-transparent py-3 px-4 text-sm"
                             />
                             <Button 
@@ -197,7 +206,7 @@ const App: React.FC = () => {
                             </Button>
                          </div>
                          <p className="text-center text-[10px] text-gray-400 mt-2">
-                            AI dapat membuat kesalahan. Selalu verifikasi data penting.
+                            Vistara Prime AI. Verifikasi keputusan finansial secara independen.
                          </p>
                     </div>
                 </div>

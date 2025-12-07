@@ -165,6 +165,24 @@ const ResearchWidget: React.FC<{ data: ResearchData }> = ({ data }) => (
 
 // --- Main Chat Bubble ---
 
+// Helper: Format bold text (**text**) and bullet points (* or -)
+const formatContent = (text: string) => {
+    if (!text) return null;
+    
+    // 1. Replace list bullets (* or - at start of line) with '• '
+    const cleanText = text.replace(/^[\*\-]\s+/gm, '• ');
+
+    // 2. Parse Bold (**text**)
+    const parts = cleanText.split(/(\*\*.*?\*\*)/g);
+
+    return parts.map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={index} className="font-bold text-nexus-onyx">{part.slice(2, -2)}</strong>;
+        }
+        return <span key={index}>{part}</span>;
+    });
+};
+
 export const ChatBubble: React.FC<{ message: AgentAction }> = ({ message }) => {
     const isUser = message.agent === AgentType.USER;
     
@@ -172,7 +190,7 @@ export const ChatBubble: React.FC<{ message: AgentAction }> = ({ message }) => {
         return (
             <div className="flex justify-end mb-6 animate-fade-in">
                 <div className="bg-nexus-text text-white px-5 py-3 rounded-2xl rounded-tr-sm max-w-[85%] shadow-md">
-                    <p className="font-sans text-sm leading-relaxed">{message.content}</p>
+                    <p className="font-sans text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                 </div>
             </div>
         );
@@ -191,7 +209,11 @@ export const ChatBubble: React.FC<{ message: AgentAction }> = ({ message }) => {
                 
                 <div className="bg-white border border-gray-100 px-5 py-4 rounded-2xl rounded-tl-sm shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow">
                     {message.title && <h4 className="font-serif font-bold text-nexus-text mb-2">{message.title}</h4>}
-                    <p className="font-sans text-nexus-text text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                    
+                    {/* Updated Content Rendering with Formatter */}
+                    <div className="font-sans text-nexus-text text-sm leading-relaxed whitespace-pre-wrap">
+                        {formatContent(message.content)}
+                    </div>
                     
                     {/* Render Specific Widgets */}
                     {message.agent === AgentType.STRATEGIST && message.data && <MissionWidget data={message.data as MissionData} />}

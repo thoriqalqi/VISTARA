@@ -1,4 +1,4 @@
-# Vistara/LokalNexus - AI Business Consultant for UMKM
+# Vistara - AI Business Consultant for UMKM
 
 **Platform konsultasi bisnis berbasis AI dengan Multi-Agent Orchestrator untuk membantu UMKM Indonesia mengambil keputusan strategis secara real-time.**
 
